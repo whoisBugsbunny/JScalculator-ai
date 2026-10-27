@@ -4,46 +4,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="noNeedtoRemember.css">
+    <meta name="theme-color" content="#f4f5f2">
+    <meta id="page-description" name="description" content="A precise, private calculator for everyday, scientific, business, and programming work.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="JScalculator.css">
-    <script type="text/javascript" src="Calcuator.js"></script>
-    <title>JavaScript Calculator</title>
+    <script src="Calcuator.js" defer></script>
+    <title>Calcwork | Precision calculator</title>
 </head>
 
-
 <body>
-    <div class="container center">
-        <br>
-        <h1>JS Calculator</h1>
-        <span>two variables</span> <input type="checkbox" onclick="auto()" id="auto" name="auto"><label for="auto">auto</label>
-    </div>
-    <div class="container center bg-light">
-        <input type="number" id="num1">
-        <select class="dropdown" id="operation">
-            <option value="1" selected>+</option>
-            <option value="2">-</option>
-            <option value="3">*</option>
-            <option value="4">/</option>
-            <option value="5">^</option>
-        </select>
-        <input type="number" id="num2">
-        <span>=</span>
-        <span id="result">result</span>
-        <button id="submit" onclick="calculate()">calculate</button>
-
-    </div>
-    <div class="container center">
-        <br>
-        <h1>JS Calculator</h1>
-        <p>'c' to clear, 'h' to clear history</p>
-    </div>
-    <div class="container center bg-light" style="justify-content: center;align-items: center;">
-        <div class="cal-box">
-            <div id="preres" class="preres">
+    <div class="app-shell">
+        <header class="topbar">
+            <a class="brand" href="./index.html" aria-label="Calcwork home">
+                <span class="brand-mark" aria-hidden="true">∑</span>
+                <span>calcwork<span class="brand-period">.</span></span>
+            </a>
+            <div class="topbar-right">
+                <span class="privacy-note"><span class="privacy-dot"></span>Calculations stay on this device</span>
+                <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"><span id="theme-icon">◐</span></button>
             </div>
-            <p id="result1" class="result1 main-result">0</p>
-            <input class="input-box" type="text" id="question" placeholder="type here" onkeydown="onenter(event)" autocomplete="off">
-        </div>
+        </header>
+
+        <main class="workspace">
+            <section class="main-column" aria-label="Calculator workspace">
+                <div class="page-heading">
+                    <div>
+                        <p class="eyebrow">YOUR WORKSPACE</p>
+                        <h1 id="page-heading">Make the numbers work.</h1>
+                    </div>
+                    <div class="angle-control" id="angle-control">
+                        <span class="angle-label">ANGLE</span>
+                        <button class="angle-option active" type="button" data-angle="DEG" aria-pressed="true">DEG</button>
+                        <button class="angle-option" type="button" data-angle="RAD" aria-pressed="false">RAD</button>
+                    </div>
+                </div>
+
+                <nav class="mode-tabs" aria-label="Calculator modes">
+                    <button class="mode-tab active" type="button" data-mode="standard" aria-pressed="true">Standard</button>
+                    <button class="mode-tab" type="button" data-mode="scientific" aria-pressed="false">Scientific</button>
+                    <button class="mode-tab" type="button" data-mode="programmer" aria-pressed="false">Programmer</button>
+                    <button class="mode-tab" type="button" data-mode="convert" aria-pressed="false">Convert</button>
+                    <button class="mode-tab" type="button" data-mode="business" aria-pressed="false">Business</button>
+                    <button class="mode-tab" type="button" data-mode="formulas" aria-pressed="false">Formulas</button>
+                </nav>
+
+                <section class="calculator-panel" id="calculator-panel" aria-label="Calculator">
+                    <div class="display-area">
+                        <label class="display-label" for="expression">EXPRESSION <span id="mode-indicator">STANDARD</span></label>
+                        <input id="expression" class="expression-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="2 + 2, 5 meters to yards, or home loan" aria-label="Enter a calculation" autofocus>
+                        <div class="display-bottom">
+                            <span class="display-hint" id="display-hint">Enter an expression or use the keypad</span>
+                            <div class="result-row"><span class="equals-mark">=</span><output id="result" aria-live="polite">0</output></div>
+                        </div>
+                        <p class="error-message" id="error-message" role="status" aria-live="polite"></p>
+                    </div>
+                    <div class="keypad-tools">
+                        <button class="utility-key" type="button" data-action="clear-entry" title="Clear entry">CE</button>
+                        <button class="utility-key" type="button" data-action="clear" title="Clear all">C</button>
+                        <button class="utility-key" type="button" data-action="backspace" title="Delete last character">⌫</button>
+                        <button class="utility-key" type="button" data-insert="(" title="Open parenthesis">(</button>
+                        <button class="utility-key" type="button" data-insert=")" title="Close parenthesis">)</button>
+                        <button class="utility-key" type="button" data-insert=" mod " title="Remainder">mod</button>
+                    </div>
+                    <div class="memory-row" aria-label="Memory controls">
+                        <span>MEMORY</span><button type="button" data-action="memory-clear">MC</button><button type="button" data-action="memory-recall">MR</button><button type="button" data-action="memory-add">M+</button><button type="button" data-action="memory-subtract">M−</button><span id="memory-status" aria-live="polite">M 0</span>
+                    </div>
+                    <div class="keypad-layout">
+                        <div class="scientific-keys" id="scientific-keys" hidden>
+                            <button type="button" data-insert="sin(">sin</button><button type="button" data-insert="cos(">cos</button><button type="button" data-insert="tan(">tan</button>
+                            <button type="button" data-insert="asin(">sin⁻¹</button><button type="button" data-insert="acos(">cos⁻¹</button><button type="button" data-insert="atan(">tan⁻¹</button>
+                            <button type="button" data-insert="sqrt(">√</button><button type="button" data-insert="cbrt(">∛</button><button type="button" data-insert="^">xʸ</button>
+                            <button type="button" data-insert="log(">log</button><button type="button" data-insert="ln(">ln</button><button type="button" data-insert="!">n!</button>
+                            <button type="button" data-insert="abs(">abs</button><button type="button" data-insert="exp(">exp</button><button type="button" data-insert="floor(">floor</button>
+                            <button type="button" data-insert="pi">π</button><button type="button" data-insert="e">e</button><button type="button" data-insert="Ans">Ans</button>
+                        </div>
+                        <div class="programmer-keys" id="programmer-keys" hidden>
+                            <div class="base-control" aria-label="Number base">
+                                <button type="button" class="base-option active" data-base="10" aria-pressed="true">DEC</button>
+                                <button type="button" class="base-option" data-base="16" aria-pressed="false">HEX</button>
+                                <button type="button" class="base-option" data-base="8" aria-pressed="false">OCT</button>
+                                <button type="button" class="base-option" data-base="2" aria-pressed="false">BIN</button>
+                            </div>
+                            <div class="base-readouts" id="base-readouts"></div>
+                            <div class="bitwise-row"><button type="button" data-insert="&">AND</button><button type="button" data-insert="|">OR</button><button type="button" data-insert="xor">XOR</button><button type="button" data-insert="~">NOT</button><button type="button" data-insert="<<">SHL</button><button type="button" data-insert=">>">SHR</button></div>
+                        </div>
+                        <div class="number-keys" id="number-keys">
+                            <button class="number-key" type="button" data-insert="7" data-digit="7">7</button><button class="number-key" type="button" data-insert="8" data-digit="8">8</button><button class="number-key" type="button" data-insert="9" data-digit="9">9</button><button class="operator-key" type="button" data-insert="/">÷</button>
+                            <button class="number-key" type="button" data-insert="4" data-digit="4">4</button><button class="number-key" type="button" data-insert="5" data-digit="5">5</button><button class="number-key" type="button" data-insert="6" data-digit="6">6</button><button class="operator-key" type="button" data-insert="*">×</button>
+                            <button class="number-key" type="button" data-insert="1" data-digit="1">1</button><button class="number-key" type="button" data-insert="2" data-digit="2">2</button><button class="number-key" type="button" data-insert="3" data-digit="3">3</button><button class="operator-key" type="button" data-insert="-">−</button>
+                            <button class="number-key" type="button" data-action="sign">+/−</button><button class="number-key" type="button" data-insert="0" data-digit="0">0</button><button class="number-key" type="button" data-insert="." data-decimal>.</button><button class="operator-key" type="button" data-insert="+">+</button>
+                            <button class="number-key hex-key" type="button" data-insert="A" data-base-digit="10" hidden>A</button><button class="number-key hex-key" type="button" data-insert="B" data-base-digit="11" hidden>B</button><button class="number-key hex-key" type="button" data-insert="C" data-base-digit="12" hidden>C</button><button class="number-key hex-key" type="button" data-insert="D" data-base-digit="13" hidden>D</button><button class="number-key hex-key" type="button" data-insert="E" data-base-digit="14" hidden>E</button><button class="number-key hex-key" type="button" data-insert="F" data-base-digit="15" hidden>F</button>
+                            <button class="number-key secondary-key" type="button" data-action="copy" title="Copy result">Copy</button><button class="number-key secondary-key" type="button" data-insert="Ans">Ans</button><button class="equals-key" type="button" data-action="evaluate">Calculate <span>↵</span></button>
+                        </div>
+                    </div>
+                    <div class="keyboard-footnote"><span class="keyboard-symbol">⌨</span> Keyboard ready <span class="shortcut"><kbd>Enter</kbd> calculate</span><span class="shortcut"><kbd>Esc</kbd> clear</span></div>
+                </section>
+
+                <section class="tool-panel" id="convert-panel" hidden aria-label="Unit converter">
+                    <div class="tool-heading">
+                        <div>
+                            <p class="eyebrow">QUICK TOOL</p>
+                            <h2>Unit converter</h2>
+                        </div>
+                        <p>Convert without losing precision.</p>
+                    </div>
+                    <label class="field-label" for="conversion-category">CATEGORY</label>
+                    <select class="field-select" id="conversion-category">
+                        <option value="length">Length</option>
+                        <option value="mass">Mass</option>
+                        <option value="temperature">Temperature</option>
+                        <option value="area">Area</option>
+                        <option value="volume">Volume</option>
+                        <option value="speed">Speed</option>
+                        <option value="time">Time</option>
+                        <option value="data">Digital storage</option>
+                    </select>
+                    <div class="conversion-grid">
+                        <label class="field-label">FROM<input class="field-input" id="conversion-value" type="number" value="1" step="any" inputmode="decimal"></label>
+                        <label class="field-label">UNIT<select class="field-select" id="conversion-from"></select></label>
+                        <button class="swap-button" id="swap-units" type="button" aria-label="Swap units" title="Swap units">⇄</button>
+                        <label class="field-label">TO<output class="field-output" id="conversion-result">0</output></label>
+                        <label class="field-label">UNIT<select class="field-select" id="conversion-to"></select></label>
+                    </div>
+                    <p class="conversion-note" id="conversion-note"></p>
+                </section>
+
+                <section class="tool-panel" id="business-panel" hidden aria-label="Business calculator">
+                    <div class="tool-heading">
+                        <div>
+                            <p class="eyebrow">QUICK TOOL</p>
+                            <h2>Business calculator</h2>
+                        </div>
+                        <p>Make pricing and percentage decisions clear.</p>
+                    </div>
+                    <div class="business-tabs" role="tablist" aria-label="Business calculation">
+                        <button class="business-tab active" type="button" data-business="percent" role="tab" aria-selected="true">Percentage</button>
+                        <button class="business-tab" type="button" data-business="discount" role="tab" aria-selected="false">Discount</button>
+                        <button class="business-tab" type="button" data-business="tax" role="tab" aria-selected="false">Tax</button>
+                        <button class="business-tab" type="button" data-business="margin" role="tab" aria-selected="false">Margin</button>
+                        <button class="business-tab" type="button" data-business="loan" role="tab" aria-selected="false">Loan</button>
+                    </div>
+                    <label class="field-label currency-field" for="business-currency">CURRENCY<select class="field-select" id="business-currency">
+                            <option value="USD">USD · US Dollar</option>
+                            <option value="EUR">EUR · Euro</option>
+                            <option value="GBP">GBP · Pound Sterling</option>
+                            <option value="INR">INR · Indian Rupee</option>
+                            <option value="CAD">CAD · Canadian Dollar</option>
+                            <option value="AUD">AUD · Australian Dollar</option>
+                            <option value="JPY">JPY · Japanese Yen</option>
+                            <option value="CHF">CHF · Swiss Franc</option>
+                        </select></label>
+                    <div class="business-form" id="business-form"></div>
+                    <div class="business-result" id="business-result" aria-live="polite"><span>RESULT</span><strong>Enter your values</strong></div>
+                </section>
+
+                <section class="tool-panel formula-panel" id="formula-panel" hidden aria-label="Formula library">
+                    <div class="tool-heading">
+                        <div>
+                            <p class="eyebrow">REFERENCE + CALCULATOR</p>
+                            <h2>Formula library</h2>
+                        </div>
+                        <p>Choose a formula. Results update as you type.</p>
+                    </div>
+                    <div class="formula-filters">
+                        <label class="field-label" for="formula-search">FIND A FORMULA<input class="field-input" id="formula-search" type="search" placeholder="Try force, ROI, or density" autocomplete="off"></label>
+                        <label class="field-label" for="formula-category">CATEGORY<select class="field-select" id="formula-category">
+                                <option value="all">All categories</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Everyday">Everyday</option>
+                                <option value="Statistics">Statistics</option>
+                            </select></label>
+                    </div>
+                    <div class="formula-layout">
+                        <nav class="formula-list" id="formula-list" aria-label="Available formulas"></nav>
+                        <section class="formula-detail" id="formula-detail" aria-label="Selected formula">
+                            <p class="formula-category" id="formula-category-label"></p>
+                            <h3 id="formula-name"></h3>
+                            <p class="formula-description" id="formula-description"></p>
+                            <code class="formula-equation" id="formula-equation"></code>
+                            <div class="formula-fields" id="formula-fields"></div>
+                            <div class="formula-result" id="formula-result" aria-live="polite"></div>
+                            <button class="formula-use-button" id="formula-use" type="button">Use result in calculator <span>↗</span></button>
+                        </section>
+                    </div>
+                </section>
+            </section>
+
+            <aside class="history-panel" aria-label="Calculation history">
+                <div class="history-heading">
+                    <div>
+                        <p class="eyebrow">YOUR SESSION</p>
+                        <h2>History <span id="history-count">0</span></h2>
+                    </div>
+                    <div class="history-actions"><button class="icon-button small" id="export-history" type="button" aria-label="Export history as CSV" title="Export CSV">⇩</button><button class="icon-button small" id="clear-history" type="button" aria-label="Clear history" title="Clear history">⌫</button></div>
+                </div>
+                <div class="history-list" id="history-list">
+                    <div class="empty-history"><span class="empty-icon">∑</span>
+                        <p>Your calculations will show up here.</p><span>Results are saved on this device.</span>
+                    </div>
+                </div>
+                <div class="history-footer"><span class="history-live-dot"></span>Ready for your next calculation</div>
+            </aside>
+        </main>
+        <footer class="app-footer"><span>CALCWORK <span id="footer-year"></span></span><span>Built for clear thinking.</span><span>Precision with a human touch.</span></footer>
     </div>
 </body>
 
