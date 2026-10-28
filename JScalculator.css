@@ -341,7 +341,7 @@ a:focus-visible {
 
 .keypad-tools {
 	display: grid;
-	grid-template-columns: repeat(6, minmax(0, 1fr));
+	grid-template-columns: repeat(7, minmax(0, 1fr));
 	gap: 7px;
 	padding: 8px 19px 6px;
 }
@@ -1017,6 +1017,7 @@ kbd {
 	letter-spacing: 0.7px;
 }
 
+html:has(body.dark-theme),
 .dark-theme {
 	color-scheme: dark;
 	--page: #161d1b;
@@ -1244,5 +1245,55 @@ kbd {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
+	}
+}
+
+.graph-controls {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: end;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+.graph-buttons {
+	display: flex;
+	gap: 6px;
+}
+.graph-buttons .icon-button {
+	height: 43px;
+	width: 43px;
+}
+.graph-canvas {
+	display: block;
+	width: 100%;
+	height: 340px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface-soft);
+	cursor: grab;
+	touch-action: none;
+}
+.graph-canvas:active {
+	cursor: grabbing;
+}
+.kbd-toggle {
+	display: none;
+	padding: 2px 7px;
+	border: 1px solid var(--line);
+	border-radius: 5px;
+	background: var(--surface-soft);
+	color: var(--blue);
+	font-family: "DM Mono", monospace;
+	font-size: 10px;
+	cursor: pointer;
+}
+@media (pointer: coarse) {
+	.kbd-toggle {
+		display: inline-block;
+	}
+}
+@media (max-width: 560px) {
+	.graph-canvas {
+		height: 280px;
 	}
 }

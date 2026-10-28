@@ -132,6 +132,8 @@ let lastAnswer = 0;
 let currentValue = 0;
 let memoryValue = 0;
 let hasResult = false;
+let xValue = null;
+const graph = { cx: 0, cy: 0, scale: 40 };
 let history = loadHistory();
 let selectedFormulaId = "compound-interest";
 let selectedFormulaResult = null;
@@ -152,6 +154,7 @@ function saveHistory() {
 function formatNumber(value, maximumFractionDigits = 12) {
     if (!Number.isFinite(value)) return String(value);
     if (Object.is(value, -0) || Math.abs(value) < 1e-14) value = 0;
+    if (Math.abs(value) >= 1e15 || (value !== 0 && Math.abs(value) < 1e-9)) return value.toExponential(Math.min(maximumFractionDigits, 10)).replace(/\.?0+e/, "e");
     return new Intl.NumberFormat("en-US", { maximumFractionDigits, useGrouping: true }).format(value);
 }
 
@@ -216,6 +219,7 @@ function evaluateExpression(source) {
         }
         if (token.type === "identifier") {
             if (mode === "programmer" && numberBase > 10 && /^[a-f]+$/.test(token.value)) return Number.parseInt(token.value, numberBase);
+            if (token.value === "x" && xValue !== null) return xValue;
             if (token.value === "pi") return Math.PI;
             if (token.value === "e") return Math.E;
             if (token.value === "ans") return lastAnswer;
@@ -289,7 +293,7 @@ function callFunction(name, args) {
     const radians = angle === "DEG" ? value * Math.PI / 180 : value;
     const toAngle = angle === "DEG" ? 180 / Math.PI : 1;
     const functions = {
-        sin: () => Math.sin(radians), cos: () => Math.cos(radians), tan: () => Math.tan(radians),
+        sin: () => Math.sin(radians), cos: () => Math.cos(radians), tan: () => (Math.abs(Math.cos(radians)) < 1e-12 ? NaN : Math.tan(radians)),
         asin: () => Math.asin(value) * toAngle, acos: () => Math.acos(value) * toAngle, atan: () => Math.atan(value) * toAngle,
         sqrt: () => Math.sqrt(value), cbrt: () => Math.cbrt(value), abs: () => Math.abs(value),
         log: () => Math.log10(value), ln: () => Math.log(value), exp: () => Math.exp(value),
@@ -329,6 +333,17 @@ function calculate(addToHistory = true) {
         hasResult = false;
         return null;
     }
+}
+
+function preview() {
+    const source = $("#expression").value.trim();
+    if (!source) { $("#result").textContent = "0"; return; }
+    if (parseConversionIntent(source) || parseLoanIntent(source)) return;
+    try {
+        const value = evaluateExpression(source);
+        $("#result").textContent = mode === "programmer" ? formatBase(value, numberBase) : formatNumber(value);
+        if (mode === "programmer") renderBases(value);
+    } catch { /* Stay quiet while the user is still typing. */ }
 }
 
 function addHistory(expression, value) {
@@ -397,6 +412,7 @@ function setMode(nextMode) {
     $("#calculator-panel").dataset.mode = mode;
     $("#convert-panel").hidden = mode !== "convert";
     $("#business-panel").hidden = mode !== "business";
+    $("#graph-panel").hidden = mode !== "graph";
     $("#formula-panel").hidden = mode !== "formulas";
     $("#scientific-keys").hidden = mode !== "scientific";
     $("#programmer-keys").hidden = mode !== "programmer";
@@ -406,7 +422,10 @@ function setMode(nextMode) {
         document.title = "Formula library | Calcwork";
         $("#page-heading").textContent = "Formula library";
         $("#page-description").content = "Search and calculate useful finance, physics, everyday, and statistics formulas.";
-    } else if (mode !== "convert" && mode !== "business") {
+    } else if (mode === "graph") {
+        document.title = "Function grapher | Calcwork";
+        $("#page-heading").textContent = "Graph a function";
+    } else {
         document.title = "Calcwork | Precision calculator";
         $("#page-heading").textContent = DEFAULT_PAGE_HEADING;
         $("#page-description").content = "A precise, private calculator for everyday, scientific, business, and programming work.";
@@ -418,6 +437,7 @@ function setMode(nextMode) {
     else if (mode === "convert") $("#conversion-value").focus();
     else if (mode === "business") $("#business-form input")?.focus();
     else if (mode === "formulas") $("#formula-search").focus();
+    else if (mode === "graph") { drawGraph(); $("#graph-fn").focus(); }
 }
 
 function parseConversionIntent(query) {
@@ -553,6 +573,7 @@ function insertText(text) {
     input.focus();
     input.setSelectionRange(cursor, cursor);
     $("#error-message").textContent = "";
+    preview();
 }
 
 function handleAction(action) {
@@ -576,23 +597,28 @@ function handleAction(action) {
         if (start !== end) input.setRangeText("", start, end, "end");
         else if (start > 0) input.setRangeText("", start - 1, start, "end");
         input.focus();
+        preview();
     } else if (action === "evaluate") calculate();
     else if (action === "sign") {
         if (input.value.trim()) input.value = `-(${input.value})`;
         else insertText("-");
         input.focus();
     } else if (action === "copy") {
-        if (!hasResult) calculate(false);
+        if ($("#expression").value.trim()) calculate(false);
         if (hasResult && navigator.clipboard) navigator.clipboard.writeText(String(currentValue)).then(() => {
             $("#display-hint").textContent = "Result copied to clipboard";
         }).catch(() => { $("#display-hint").textContent = "Clipboard access is unavailable"; });
     } else if (action === "memory-clear") {
         memoryValue = 0;
         $("#memory-status").textContent = "M cleared";
+    } else if (action === "memory-store") {
+        if ($("#expression").value.trim() && calculate(false) === null) return;
+        memoryValue = currentValue;
+        $("#memory-status").textContent = `M ${formatNumber(memoryValue)}`;
     } else if (action === "memory-recall") {
         insertText("Mem");
     } else if (action === "memory-add" || action === "memory-subtract") {
-        if (!hasResult && calculate(false) === null) return;
+        if ($("#expression").value.trim() && calculate(false) === null) return;
         memoryValue += action === "memory-add" ? currentValue : -currentValue;
         $("#memory-status").textContent = `M ${formatNumber(memoryValue)}`;
     }
@@ -631,20 +657,24 @@ function businessFields() {
         discount: [['Original price', 'amount', '120'], ['Discount', 'rate', '20']],
         tax: [['Price before tax', 'amount', '100'], ['Tax rate', 'rate', '8.25']],
         margin: [['Cost', 'cost', '60'], ['Selling price', 'price', '100']],
+        tip: [['Bill amount', 'amount', '86.40'], ['Tip (%)', 'rate', '18'], ['People', 'people', '2']],
+        date: [['From', 'from', new Date().toISOString().slice(0, 10), 'date'], ['To', 'to', new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), 'date']],
+        age: [['Date of birth', 'dob', '1995-06-15', 'date']],
         loan: [['Loan amount', 'principal', '250000'], ['Annual interest rate (%)', 'apr', '6.5'], ['Term (years)', 'years', '30']]
     };
     const form = $("#business-form");
-    form.replaceChildren(...forms[businessMode].map(([label, name, value]) => {
+    form.replaceChildren(...forms[businessMode].map(([label, name, value, type]) => {
         const wrapper = document.createElement("label"); wrapper.className = "field-label"; wrapper.textContent = label.toUpperCase();
-        const input = document.createElement("input"); input.className = "field-input"; input.name = name; input.type = "number"; input.step = "any"; input.value = value; input.inputMode = "decimal";
+        const input = document.createElement("input"); input.className = "field-input"; input.name = name; input.type = type || "number"; if (!type) { input.step = "any"; input.inputMode = "decimal"; } input.value = value;
         wrapper.append(input); return wrapper;
     }));
+    $(".currency-field").hidden = businessMode === "date" || businessMode === "age";
     form.querySelectorAll("input").forEach((input) => input.addEventListener("input", updateBusiness));
     updateBusiness();
 }
 
 function updateBusiness() {
-    const values = Object.fromEntries([...$("#business-form").querySelectorAll("input")].map((input) => [input.name, Number(input.value)]));
+    const values = Object.fromEntries([...$("#business-form").querySelectorAll("input")].map((input) => [input.name, input.type === "date" ? input.value : Number(input.value)]));
     const result = $("#business-result");
     let label; let primary; let detail;
     if (businessMode === "percent") {
@@ -661,6 +691,24 @@ function updateBusiness() {
         const margin = values.price === 0 ? NaN : profit / values.price * 100;
         const markup = values.cost === 0 ? NaN : profit / values.cost * 100;
         label = "GROSS MARGIN"; primary = Number.isFinite(margin) ? `${formatNumber(margin, 2)}%` : "—"; detail = `Profit ${formatCurrency(profit)} · Markup ${Number.isFinite(markup) ? `${formatNumber(markup, 2)}%` : "—"}`;
+    } else if (businessMode === "tip") {
+        const tip = values.amount * values.rate / 100;
+        const people = Math.max(1, Math.floor(values.people) || 1);
+        label = "EACH PERSON PAYS"; primary = formatCurrency((values.amount + tip) / people); detail = `Tip ${formatCurrency(tip)} · Total ${formatCurrency(values.amount + tip)} · ${people} ${people === 1 ? "person" : "people"}`;
+    } else if (businessMode === "date") {
+        const days = Math.round((new Date(values.to) - new Date(values.from)) / 864e5);
+        label = "DIFFERENCE"; primary = Number.isFinite(days) ? `${formatNumber(Math.abs(days))} days` : "Pick two dates";
+        detail = Number.isFinite(days) ? `${formatNumber(Math.abs(days) / 7, 2)} weeks · ${days < 0 ? "the second date is earlier" : "counting forward"}` : "";
+    } else if (businessMode === "age") {
+        const born = new Date(`${values.dob}T00:00`); const now = new Date();
+        label = "AGE TODAY";
+        if (Number.isNaN(born.getTime()) || born > now) { primary = "Pick a past date"; detail = ""; }
+        else {
+            let y = now.getFullYear() - born.getFullYear(); let m = now.getMonth() - born.getMonth(); let d = now.getDate() - born.getDate();
+            if (d < 0) { m--; d += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+            if (m < 0) { y--; m += 12; }
+            primary = `${y} years, ${m} months, ${d} days`; detail = `${formatNumber(Math.floor((now - born) / 864e5))} days lived`;
+        }
     } else {
         const payments = values.years * 12;
         const monthlyRate = values.apr / 1200;
@@ -747,10 +795,48 @@ function updateFormulaResult() {
     $("#formula-use").disabled = !Number.isFinite(selectedFormulaResult.value);
 }
 
+function drawGraph() {
+    const canvas = $("#graph-canvas"); const box = canvas.getBoundingClientRect();
+    if (!box.width) return;
+    const dpr = window.devicePixelRatio || 1; const W = box.width; const H = box.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const g = canvas.getContext("2d"); g.scale(dpr, dpr);
+    const css = getComputedStyle(document.body); const color = (name) => css.getPropertyValue(name).trim();
+    const sx = (x) => W / 2 + (x - graph.cx) * graph.scale; const sy = (y) => H / 2 - (y - graph.cy) * graph.scale;
+    const step = Math.pow(10, Math.ceil(Math.log10(30 / graph.scale)));
+    g.font = "10px 'DM Mono', monospace"; g.fillStyle = color("--muted");
+    for (let k = Math.ceil((graph.cx - W / 2 / graph.scale) / step); k * step <= graph.cx + W / 2 / graph.scale; k++) {
+        const px = sx(k * step); g.strokeStyle = color("--line"); g.lineWidth = 1; g.beginPath(); g.moveTo(px, 0); g.lineTo(px, H); g.stroke();
+        if (k !== 0) g.fillText(formatNumber(k * step, 6), px + 3, Math.min(H - 4, Math.max(12, sy(0) + 12)));
+    }
+    for (let k = Math.ceil((graph.cy - H / 2 / graph.scale) / step); k * step <= graph.cy + H / 2 / graph.scale; k++) {
+        const py = sy(k * step); g.strokeStyle = color("--line"); g.lineWidth = 1; g.beginPath(); g.moveTo(0, py); g.lineTo(W, py); g.stroke();
+        if (k !== 0) g.fillText(formatNumber(k * step, 6), Math.min(W - 36, Math.max(4, sx(0) + 4)), py - 3);
+    }
+    g.strokeStyle = color("--muted"); g.lineWidth = 1.5; g.beginPath(); g.moveTo(sx(0), 0); g.lineTo(sx(0), H); g.moveTo(0, sy(0)); g.lineTo(W, sy(0)); g.stroke();
+    const source = $("#graph-fn").value.trim(); const note = $("#graph-note");
+    if (!source) { note.textContent = "Type a function of x to plot it."; return; }
+    const savedAngle = angle; angle = "RAD";
+    g.strokeStyle = color("--blue"); g.lineWidth = 2; g.beginPath();
+    let pen = false; let lastY = 0; let plotted = 0; let failure = "";
+    for (let px = 0; px <= W; px++) {
+        let y = NaN; xValue = graph.cx + (px - W / 2) / graph.scale;
+        try { y = evaluateExpression(source); } catch (error) { failure = error.message; }
+        const py = sy(y);
+        if (!Number.isFinite(y) || Math.abs(py) > 1e5) { pen = false; continue; }
+        if (pen && Math.abs(py - lastY) < H * 1.5) g.lineTo(px, py); else g.moveTo(px, py);
+        pen = true; lastY = py; plotted++;
+    }
+    g.stroke(); xValue = null; angle = savedAngle;
+    note.textContent = plotted ? "Angles are in radians on the graph. Use x as the variable, for example 2x + 1 or sin(x)/x." : (failure || "Nothing to plot in this view.");
+}
+
+function zoomGraph(factor) { graph.scale = Math.min(2000, Math.max(2, graph.scale * factor)); drawGraph(); }
+
 function initialize() {
     try {
         const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-        if (settings.theme === "dark") document.body.classList.add("dark-theme");
+        if (settings.theme === "dark" || (!settings.theme && matchMedia("(prefers-color-scheme: dark)").matches)) document.body.classList.add("dark-theme");
         if (settings.angle === "RAD") angle = "RAD";
         if (["USD", "EUR", "GBP", "INR", "CAD", "AUD", "JPY", "CHF"].includes(settings.currency)) currencyCode = settings.currency;
     } catch { /* Use defaults if settings cannot be read. */ }
@@ -830,8 +916,22 @@ function initialize() {
     $("#theme-toggle").addEventListener("click", () => {
         document.body.classList.toggle("dark-theme");
         $("#theme-icon").textContent = document.body.classList.contains("dark-theme") ? "☼" : "◐";
+        drawGraph();
         try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ angle, currency: currencyCode, theme: document.body.classList.contains("dark-theme") ? "dark" : "light" })); } catch { /* Ignore unavailable storage. */ }
     });
+    const canvas = $("#graph-canvas"); let drag = null;
+    canvas.addEventListener("pointerdown", (event) => { drag = { x: event.clientX, y: event.clientY, cx: graph.cx, cy: graph.cy }; canvas.setPointerCapture(event.pointerId); });
+    canvas.addEventListener("pointermove", (event) => { if (!drag) return; graph.cx = drag.cx - (event.clientX - drag.x) / graph.scale; graph.cy = drag.cy + (event.clientY - drag.y) / graph.scale; drawGraph(); });
+    canvas.addEventListener("pointerup", () => { drag = null; });
+    canvas.addEventListener("wheel", (event) => { event.preventDefault(); zoomGraph(event.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
+    $("#graph-fn").addEventListener("input", drawGraph);
+    $("#graph-zoom-in").addEventListener("click", () => zoomGraph(1.3));
+    $("#graph-zoom-out").addEventListener("click", () => zoomGraph(1 / 1.3));
+    $("#graph-reset").addEventListener("click", () => { Object.assign(graph, { cx: 0, cy: 0, scale: 40 }); drawGraph(); });
+    window.addEventListener("resize", drawGraph);
+    $("#expression").addEventListener("input", preview);
+    if (matchMedia("(pointer: coarse)").matches) $("#expression").inputMode = "none";
+    $("#kbd-toggle").addEventListener("click", () => { const input = $("#expression"); input.inputMode = input.inputMode === "none" ? "text" : "none"; input.focus(); });
     $("#expression").focus({ preventScroll: true });
     launchFromUrl();
 }

@@ -48,6 +48,7 @@
                     <button class="mode-tab" type="button" data-mode="convert" aria-pressed="false">Convert</button>
                     <button class="mode-tab" type="button" data-mode="business" aria-pressed="false">Business</button>
                     <button class="mode-tab" type="button" data-mode="formulas" aria-pressed="false">Formulas</button>
+                    <button class="mode-tab" type="button" data-mode="graph" aria-pressed="false">Graph</button>
                 </nav>
 
                 <section class="calculator-panel" id="calculator-panel" aria-label="Calculator">
@@ -67,9 +68,10 @@
                         <button class="utility-key" type="button" data-insert="(" title="Open parenthesis">(</button>
                         <button class="utility-key" type="button" data-insert=")" title="Close parenthesis">)</button>
                         <button class="utility-key" type="button" data-insert=" mod " title="Remainder">mod</button>
+                        <button class="utility-key" type="button" data-insert="%" title="Percent">%</button>
                     </div>
                     <div class="memory-row" aria-label="Memory controls">
-                        <span>MEMORY</span><button type="button" data-action="memory-clear">MC</button><button type="button" data-action="memory-recall">MR</button><button type="button" data-action="memory-add">M+</button><button type="button" data-action="memory-subtract">M−</button><span id="memory-status" aria-live="polite">M 0</span>
+                        <span>MEMORY</span><button type="button" data-action="memory-clear">MC</button><button type="button" data-action="memory-recall">MR</button><button type="button" data-action="memory-store">MS</button><button type="button" data-action="memory-add">M+</button><button type="button" data-action="memory-subtract">M−</button><span id="memory-status" aria-live="polite">M 0</span>
                     </div>
                     <div class="keypad-layout">
                         <div class="scientific-keys" id="scientific-keys" hidden>
@@ -99,7 +101,7 @@
                             <button class="number-key secondary-key" type="button" data-action="copy" title="Copy result">Copy</button><button class="number-key secondary-key" type="button" data-insert="Ans">Ans</button><button class="equals-key" type="button" data-action="evaluate">Calculate <span>↵</span></button>
                         </div>
                     </div>
-                    <div class="keyboard-footnote"><span class="keyboard-symbol">⌨</span> Keyboard ready <span class="shortcut"><kbd>Enter</kbd> calculate</span><span class="shortcut"><kbd>Esc</kbd> clear</span></div>
+                    <div class="keyboard-footnote"><span class="keyboard-symbol">⌨</span> Keyboard ready <button class="kbd-toggle" id="kbd-toggle" type="button" title="Show or hide the device keyboard">Aa</button><span class="shortcut"><kbd>Enter</kbd> calculate</span><span class="shortcut"><kbd>Esc</kbd> clear</span></div>
                 </section>
 
                 <section class="tool-panel" id="convert-panel" hidden aria-label="Unit converter">
@@ -145,6 +147,9 @@
                         <button class="business-tab" type="button" data-business="tax" role="tab" aria-selected="false">Tax</button>
                         <button class="business-tab" type="button" data-business="margin" role="tab" aria-selected="false">Margin</button>
                         <button class="business-tab" type="button" data-business="loan" role="tab" aria-selected="false">Loan</button>
+                        <button class="business-tab" type="button" data-business="tip" role="tab" aria-selected="false">Tip split</button>
+                        <button class="business-tab" type="button" data-business="date" role="tab" aria-selected="false">Dates</button>
+                        <button class="business-tab" type="button" data-business="age" role="tab" aria-selected="false">Age</button>
                     </div>
                     <label class="field-label currency-field" for="business-currency">CURRENCY<select class="field-select" id="business-currency">
                             <option value="USD">USD · US Dollar</option>
@@ -158,6 +163,22 @@
                         </select></label>
                     <div class="business-form" id="business-form"></div>
                     <div class="business-result" id="business-result" aria-live="polite"><span>RESULT</span><strong>Enter your values</strong></div>
+                </section>
+
+                <section class="tool-panel" id="graph-panel" hidden aria-label="Function grapher">
+                    <div class="tool-heading">
+                        <div>
+                            <p class="eyebrow">QUICK TOOL</p>
+                            <h2>Function grapher</h2>
+                        </div>
+                        <p>Drag to pan, scroll or use + / − to zoom.</p>
+                    </div>
+                    <div class="graph-controls">
+                        <label class="field-label" for="graph-fn">Y =<input class="field-input" id="graph-fn" value="sin(x)" autocomplete="off" spellcheck="false" placeholder="x^2, sin(x)/x, 2x+1"></label>
+                        <div class="graph-buttons"><button class="icon-button" id="graph-zoom-in" type="button" aria-label="Zoom in">+</button><button class="icon-button" id="graph-zoom-out" type="button" aria-label="Zoom out">−</button><button class="icon-button" id="graph-reset" type="button" aria-label="Reset view" title="Reset view">⌂</button></div>
+                    </div>
+                    <canvas class="graph-canvas" id="graph-canvas" role="img" aria-label="Graph of the entered function"></canvas>
+                    <p class="conversion-note" id="graph-note"></p>
                 </section>
 
                 <section class="tool-panel formula-panel" id="formula-panel" hidden aria-label="Formula library">
